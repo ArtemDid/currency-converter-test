@@ -1,5 +1,3 @@
-## Available Scripts
-
 Software requirements:
 1. NodeJS v16.10.x
 
