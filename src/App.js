@@ -1,18 +1,17 @@
-import logo from './logo.svg';
+import React from "react";
 import './App.css';
-import { Route, BrowserRouter, Switch, Redirect } from 'react-router-dom';
-import MainPage from './components/MainPage'
-import ShowCurrency from './components/ShowCurrency'
+import { Provider } from 'react-redux'
+import { BrowserRouter } from 'react-router-dom';
+import Main from './components/Main'
+import store from './store/store';
 
 function App() {
   return (
-    <BrowserRouter>
-      <Switch>
-        <Route exact path="/" component={MainPage} />
-        <Route path="/showcurrency" component={ShowCurrency} />
-        <Redirect path="*" to="/"/>
-      </Switch>
-    </BrowserRouter>
+    <Provider store={store}>
+      <BrowserRouter>
+        <Main/>
+      </BrowserRouter>
+    </Provider>
   );
 }
 

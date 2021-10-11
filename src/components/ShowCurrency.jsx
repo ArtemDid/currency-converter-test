@@ -1,52 +1,25 @@
 import React, { Fragment, useState, useEffect } from "react";
-import { Modal, Table } from 'antd';
-import { Layout, Menu, Dropdown } from 'antd';
+import { Layout, Menu, Dropdown, Table } from 'antd';
 import { DownOutlined } from '@ant-design/icons';
-import { NavLink, useLocation } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import 'antd/dist/antd.css';
-const axios = require('axios');
+import { useStore, useSelector } from "react-redux";
 const { Header } = Layout;
 
 const ShowCurrency = () => {
-  const Currency = ['UAH', 'AZN', 'BYN', 'CAD', 'CHF', 'CNY', 'CZK', 'DKK', 'EUR', 'GBP', 'GEL', 'HUF', 'ILS', 'JPY', 'KZT', 'MDL', 'NOK', 'PLZ', 'RUB', 'SEK', 'SGD', 'TMT', 'TRY', 'USD', 'UZS']
-  var [dataRates, setdataRates] = useState([]);
-  const [dataRates2, setdataRates2] = useState([]);
+  const [dataRates, setdataRates] = useState([]);
   const [currentValue, setCurrentValue] = useState('UAH');
-  const [currency, setCurrency] = useState([]);
+  const [currencySelect, setCurrencySelect] = useState([]);
+  const store = useStore()
+  const selectorStateCurrency = useSelector(state => state.curr)
 
-  const location = useLocation();
-
-  function rates() {
-    let date = new Date(Date.now());
-    let month = date.getMonth() + 1;
-    let year = date.getFullYear();
-
-    fetch(`https://bank.gov.ua/NBUStatService/v1/statdirectory/exchange?json`, {
-      method: 'GET',
-    })
-      .then(response => {
-        return response.json();
-      })
-      .then(data => {
-        console.log('data: ', data)
-        setdataRates(data);
-        setdataRates2(data);
-        foo(data);
-      })
-      .catch(err => {
-        console.log(err.message);
-
-      });
-
-  }
-
-  function foo(data) {
-    let mas = []
+  function dropDown(data) {
+    let masDropDown = []
     data.map((item) => {
-      mas.push(item.cc)
+        masDropDown.push(item.cc)
     })
-    return setCurrency(mas)
-  }
+    return setCurrencySelect(masDropDown)
+}
 
   const columns = [
     {
@@ -66,35 +39,36 @@ const ShowCurrency = () => {
   ];
 
   useEffect(() => {
-    rates();
-  }, [])
+    setdataRates(store.getState().curr);
+    dropDown(store.getState().curr);
+  }, [selectorStateCurrency])
 
+  function checkCurrency(e) {
+    setCurrentValue(e.target.innerText)
+    let indexCurrent = store.getState().curr.findIndex(function (item, index) {
+      if (item.cc === e.target.innerText)
+        return index;
+    });
+    if (indexCurrent === -1) {
+      indexCurrent = 0;
+    }
+    let rateCurrent = dataRates[indexCurrent].rate;
 
+    setdataRates(store.getState().curr);
+
+    dataRates.map((item) => {
+      item.rate = (item.rate / rateCurrent).toFixed(4)
+    });
+
+    setdataRates(dataRates)
+  }
 
   const menu = (
     <Menu>
-      {currency.map((item, index) => {
+      {currencySelect.map((item, index) => {
         return (
           <Menu.Item key={index}>
-            <a href="#" onClick={function () {
-              console.log(item, location.pathname)
-              setCurrentValue(item)
-              let val = dataRates2.findIndex(function (item2, index) {
-                if (item2.cc == item)
-                  return index;
-              });
-              let tmp = dataRates2[val].rate;
-              console.log(val, tmp)
-              setdataRates(dataRates2);
-              console.log(dataRates)
-              setdataRates(() => {
-                dataRates.map((item) => {
-                  item.rate /= tmp;
-                })
-                return dataRates;
-              })
-
-            }}>{item}</a>
+            <a href="#" onClick={(e) => checkCurrency(e)}>{item}</a>
           </Menu.Item>
         )
       })}
@@ -104,7 +78,7 @@ const ShowCurrency = () => {
   return (
     <Fragment>
       <Layout>
-        <Header >
+        <Header>
           <Menu theme="dark" mode="horizontal" style={{ textAlignLast: 'center' }}>
             <Menu.Item key="1">
               <Dropdown overlay={menu} trigger={['click']} scrollable>
@@ -119,7 +93,6 @@ const ShowCurrency = () => {
           </Menu>
         </Header>
       </Layout>
-
       <Table columns={columns} dataSource={dataRates} />
     </Fragment>
   );
